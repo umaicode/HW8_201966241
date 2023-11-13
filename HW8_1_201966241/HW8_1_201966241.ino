@@ -1,3 +1,4 @@
+// 공통음극방식
 // 0에서 9까지 숫자 표현을 위한 세그먼트 a, b, c, d, e, f, g, dp의 패턴
 byte patterns[] = {0xFC, 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE4, 0xFE, 0xE6};
 
@@ -10,9 +11,10 @@ int button_pin = 14;
 // 7세그먼트 모듈 연결 핀 'a, b, c, d, e, f, g, dp' 순서
 int segment_pin[] = {58, 59, 60, 61, 62, 63, 64, 65};
 
-int SEGMENT_DELAY = 1;  // 숫자 표시 사이의 시간 간격
+int SEGMENT_DELAY = 5;  // 숫자 표시 사이의 시간 간격
 bool counting = true; // 상향 하향
 bool state = LOW; // 버튼상태
+unsigned long time_previous, time_current;
 
 int counter = 0; // 카운터 값
 
@@ -40,18 +42,16 @@ void show_digit(int pos, int number) {
   }
 }
 
-void show_3_digit(int _number) {
-  int number = _number;
-  
-  number = number % 1000;
+void show_3_digit(int _number) { 
+  int number = _number % 1000;
   int hundreads = number / 100;
   number = number % 100;
   int tens = number / 10;
   int ones = number % 10;
 
-  if(_number > 99) show_digit(2, hundreads);
+  show_digit(2, hundreads);
   delay(SEGMENT_DELAY);
-  if(_number > 9) show_digit(3, tens);
+  show_digit(3, tens);
   delay(SEGMENT_DELAY);
   show_digit(4, ones);
   delay(SEGMENT_DELAY);
@@ -60,20 +60,22 @@ void show_3_digit(int _number) {
 void loop() {
   // put your main code here, to run repeatedly:
   bool current_state = digitalRead(button_pin);
-  if(current_state != state) {
-    if(current_state == HIGH) {
-      counting = !counting;
+  if(current_state == HIGH && state == LOW) {
+    counting = !counting;
+    delay(50);
+  }
+  state = current_state;
+
+  time_current = millis();
+  if(time_current - time_previous >= 1000) {
+    time_previous = time_current;
+    if(counting) {
+      counter = (counter + 1) % 1000;
     }
-    state = current_state;
+    else {
+      counter = (counter - 1 + 1000) % 1000;
+    }
   }
 
   show_3_digit(counter);
-
-  if(counting) {
-    counter = (counter + 1) % 1000;
-  }
-  else {
-    counter = (counter - 1 + 1000) % 1000;
-  }
-  delay(1000);
 }
